@@ -1,3 +1,58 @@
 "use client";
-import { Navbar } from '@/components/layout/navbar';import { categories,jobs } from '@/lib/data';import { useAppStore } from '@/lib/store';import Link from 'next/link';import { motion } from 'framer-motion';
-export default function Home(){const{category,setCategory}=useAppStore();const filtered=category==='Explore All Roles'?jobs:jobs.filter(j=>j.category===category);return <main><Navbar/><section className='container py-16 space-y-8'><h1 className='text-5xl font-semibold'>Find Your Seat in the Rocketship</h1><p className='text-zinc-600'>A minimalist recruitment portal for modern tech teams.</p><div className='grid md:grid-cols-4 gap-3'>{categories.map(c=><button key={c} onClick={()=>{setCategory(c);document.getElementById('jobs')?.scrollIntoView({behavior:'smooth'})}} className='border rounded-full px-5 py-3 text-sm hover:bg-zinc-50'>{c}</button>)}</div></section><section id='jobs' className='container py-8 space-y-4'>{filtered.map(job=><motion.article key={job.id} whileHover={{scale:1.01}} className='card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4'><div><h3 className='text-xl font-semibold'>{job.title}</h3><p className='text-sm text-zinc-600'>{job.department} • {job.location} • {job.employmentType}</p></div><Link href={`/jobs/${job.id}`} className='px-4 py-2 border rounded-lg text-sm hover:bg-zinc-50'>Apply Now</Link></motion.article>)}</section><section className='container py-16 grid md:grid-cols-2 gap-8' id='about'><div className='card p-6'><h2 className='text-2xl font-semibold'>Why Join Us</h2><p className='text-zinc-600 mt-2'>Work with high-impact teams building products used globally.</p></div><div className='card p-6'><h2 className='text-2xl font-semibold'>Company Culture</h2><p className='text-zinc-600 mt-2'>Transparent, inclusive, and craft-focused engineering culture.</p></div><div className='card p-6'><h2 className='text-2xl font-semibold'>Hiring Process Timeline</h2><p className='text-zinc-600 mt-2'>Apply → Screen → Technical Interview → Offer.</p></div><div className='card p-6'><h2 className='text-2xl font-semibold'>FAQ</h2><p className='text-zinc-600 mt-2'>Typical response time: 3-5 business days.</p></div></section><footer id='contact' className='border-t py-10 mt-10'><div className='container text-sm text-zinc-600'>Contact us at careers@hiretech.dev • X • LinkedIn • GitHub</div></footer></main>}
+
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Navbar } from "@/components/layout/navbar";
+import { categories, jobs } from "@/lib/data";
+import { useAppStore } from "@/lib/store";
+
+export default function Home() {
+  const { category, setCategory } = useAppStore();
+  const filtered = category === "Explore All Roles" ? jobs : jobs.filter((j) => j.category === category);
+
+  return (
+    <main className="pb-12">
+      <Navbar />
+
+      <section className="container shell p-8 md:p-12 grid lg:grid-cols-2 gap-8 items-center">
+        <div className="space-y-6">
+          <h1 className="text-5xl md:text-6xl leading-tight font-medium">Find Your Seat in the Rocketship</h1>
+          <p className="text-zinc-600 text-lg max-w-xl">Find jobs that match your interests and abilities with a minimal, modern hiring experience.</p>
+          <button className="btn-primary">Get Started</button>
+        </div>
+        <div className="rounded-2xl border border-[var(--line)] bg-[#e5f2f4] min-h-[360px]" />
+      </section>
+
+      <section className="container -mt-8 relative z-10">
+        <div className="card p-4 md:p-5 grid md:grid-cols-4 gap-3">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => {
+                setCategory(c);
+                document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm hover:bg-zinc-50 transition"
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section id="jobs" className="container py-12 space-y-4">
+        {filtered.map((job) => (
+          <motion.article key={job.id} whileHover={{ scale: 1.01 }} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-semibold">{job.title}</h3>
+              <p className="text-sm text-zinc-600">{job.department} • {job.location} • {job.employmentType}</p>
+            </div>
+            <Link href={`/jobs/${job.id}`} className="btn-primary text-sm">
+              Apply Now
+            </Link>
+          </motion.article>
+        ))}
+      </section>
+    </main>
+  );
+}
