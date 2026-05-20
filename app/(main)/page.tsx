@@ -107,7 +107,7 @@ export default function Home() {
             { icon: Building2, value: 'Jabalpur', label: 'Our City' },
           ].map((item) => (
             <div key={item.label} className="card p-6 text-center">
-              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-orange-50 text-orange-600 grid place-items-center"><item.icon size={24} /></div>
+              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-[var(--accent)] text-[#0f2526] grid place-items-center"><item.icon size={24} /></div>
               <p className="text-4xl font-bold">{item.value}</p>
               <p className="text-zinc-500 mt-1">{item.label}</p>
             </div>
@@ -121,7 +121,7 @@ export default function Home() {
             { icon: Truck, title: 'Fast Delivery', text: 'Quick delivery within Jabalpur city' },
           ].map((item) => (
             <div key={item.title} className="card p-6 text-center">
-              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-orange-50 text-orange-600 grid place-items-center"><item.icon size={24} /></div>
+              <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-[var(--accent)] text-[#0f2526] grid place-items-center"><item.icon size={24} /></div>
               <h3 className="text-2xl font-semibold">{item.title}</h3>
               <p className="text-zinc-500 mt-2">{item.text}</p>
             </div>
