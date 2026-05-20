@@ -30,22 +30,22 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/`
-    | `/admin/login`
-    | `/admin/dashboard`
-    | `/admin`
     | `/admin/register`
+    | `/admin`
+    | `/admin/dashboard`
+    | `/admin/login`
     | `/api/admin/jobs`
-    | `/api/applications`
     | `/api/admin/login`
+    | `/api/applications`
     | `/api/admin/register`
-    | `/api/admin/applications`
     | `/api/jobs`
+    | `/api/admin/applications`
   type DynamicRoutes<T extends string = string> = 
-    | `/api/admin/applications/${SafeSlug<T>}/resume`
-    | `/api/admin/applications/${SafeSlug<T>}`
     | `/api/admin/jobs/${SafeSlug<T>}`
-    | `/jobs/${SafeSlug<T>}`
     | `/apply/${SafeSlug<T>}`
+    | `/jobs/${SafeSlug<T>}`
+    | `/api/admin/applications/${SafeSlug<T>}`
+    | `/api/admin/applications/${SafeSlug<T>}/resume`
 
   type RouteImpl<T> = 
     | StaticRoutes

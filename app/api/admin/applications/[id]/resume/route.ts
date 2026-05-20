@@ -4,6 +4,10 @@ import { access, readFile } from 'fs/promises';
 import { constants } from 'fs';
 import { join } from 'path';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const runtime = 'nodejs';
+
 const toPublicResumePath = (resume: string) => {
   const normalized = resume.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/^public\//, '');
   if (normalized.startsWith('/')) return normalized;

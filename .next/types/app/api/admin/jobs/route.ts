@@ -1,4 +1,4 @@
-// File: D:\priz\assets\hiring_tech\v38\hiring_tech\app\api\admin\jobs\route.ts
+// File: D:\priz\assets\hiring_tech\v39\hiring_techie\app\api\admin\jobs\route.ts
 import * as entry from '../../../../../../app/api/admin/jobs/route.js'
 import type { NextRequest } from 'next/server.js'
 
