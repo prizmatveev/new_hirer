@@ -16,7 +16,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 py-4">
+    <header className="sticky top-0 z-50 py-3">
       <nav className="container shell h-16 px-6 flex items-center justify-between">
         <Link href="/" className="font-semibold text-lg tracking-tight flex items-center gap-2">
           <Image src="/localsm-logo.svg" alt="LocalSM logo" width={28} height={28} />
@@ -28,11 +28,17 @@ export function Navbar() {
         </button>
 
         <div className="hidden md:flex gap-8 items-center">
-          {links.map(([name, href]) => (
-            <Link key={name} href={href} className="text-sm hover:text-zinc-600 transition-colors">
-              {name}
-            </Link>
-          ))}
+          {links.map(([name, href]) => {
+            const isActive = name === "Jobs";
+            return (
+              <Link key={name} href={href} className={`text-sm transition-colors ${isActive ? "font-semibold text-zinc-900" : "hover:text-zinc-600"}`}>
+                <span className="relative inline-flex items-center">
+                  {name}
+                  {isActive && <span className="absolute -bottom-2 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[var(--accent)]" />}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

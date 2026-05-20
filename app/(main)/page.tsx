@@ -59,8 +59,8 @@ export default function Home() {
       <Navbar />
       <section className="container shell p-8 md:p-12 grid lg:grid-cols-2 gap-8 items-center">
         <div className="space-y-6">
-          <h1 className="text-5xl md:text-6xl leading-tight font-medium">Work with Us</h1>
-          <p className="text-zinc-600 text-lg max-w-xl">Find jobs that match your interests and abilities with a minimal, modern hiring experience.</p>
+          <h1 className="text-5xl md:text-6xl leading-tight font-extrabold">Work with Us</h1>
+          <p className="text-[#4A5568] text-lg max-w-xl">Find jobs that match your interests and abilities with a minimal, modern hiring experience.</p>
           <button className="btn-primary" onClick={() => document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" })}>Get Started</button>
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-[#e5f2f4] min-h-[360px]" />
@@ -68,23 +68,26 @@ export default function Home() {
 
       <section className="container -mt-8 relative z-10">
         <div className="card p-4 md:p-5 grid md:grid-cols-4 gap-3">
-          {categories.map((c) => (
-            <button key={c} onClick={() => { setCategory(c); document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" }); }} className="rounded-xl border border-[var(--line)] px-4 py-3 text-sm hover:bg-zinc-50 transition">{c}</button>
-          ))}
+          {categories.map((c) => {
+            const isExploreAll = c === "Explore All Roles";
+            return (
+              <button key={c} onClick={() => { setCategory(c); document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" }); }} className={`rounded-xl border border-[var(--line)] px-4 py-3 text-sm transition ${isExploreAll ? "bg-zinc-100 text-zinc-900 font-medium hover:bg-zinc-200" : "hover:bg-[color:rgba(123,208,211,0.12)] hover:border-[#c2dfe2]"}`}>{c}</button>
+            );
+          })}
         </div>
       </section>
 
       <section id="jobs" className="container py-12 space-y-4">
-        <div className="flex justify-end">
-          <button className="border rounded-lg px-3 py-2 text-sm" onClick={() => void loadJobs()}>Refresh Jobs</button>
-        </div>
         {filtered.map((job) => (
           <motion.article key={job.id} whileHover={{ scale: 1.01 }} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h3 className="text-xl font-semibold">{job.title}</h3>
               <p className="text-sm text-zinc-600">{job.category} • {job.location} • {job.employmentType}</p>
             </div>
-            <Link href={`/jobs/${job.id}`} className="btn-primary text-sm">Apply Now</Link>
+            <div className="flex items-center gap-2">
+              <button className="border rounded-lg px-3 py-2 text-sm hover:bg-zinc-50 transition" onClick={() => void loadJobs()}>Refresh Jobs</button>
+              <Link href={`/jobs/${job.id}`} className="btn-primary text-sm">Apply Now</Link>
+            </div>
           </motion.article>
         ))}
       </section>
