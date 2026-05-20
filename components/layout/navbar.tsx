@@ -11,10 +11,6 @@ const links = [
   ["Jobs", "#jobs"],
 ] as const;
 
-const adminLinks = [
-  ["Admin Login", "/admin/login"],
-  ["Admin Register", "/admin/register"],
-] as const;
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -37,13 +33,6 @@ export function Navbar() {
               {name}
             </Link>
           ))}
-          <div className="flex items-center gap-2">
-            {adminLinks.map(([name, href]) => (
-              <Link key={name} href={href} className="text-sm border rounded-lg px-3 py-2 hover:bg-zinc-50 transition-colors">
-                {name}
-              </Link>
-            ))}
-          </div>
         </div>
       </nav>
 
@@ -51,12 +40,6 @@ export function Navbar() {
         <div className="container md:hidden mt-2 shell p-4 flex flex-col gap-2">
           {links.map(([name, href]) => (
             <Link key={name} href={href}>
-              {name}
-            </Link>
-          ))}
-          <div className="h-px bg-zinc-200 my-1" />
-          {adminLinks.map(([name, href]) => (
-            <Link key={name} href={href} className="border rounded-lg px-3 py-2">
               {name}
             </Link>
           ))}
