@@ -55,9 +55,11 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 py-3">
       <nav className="container shell h-16 px-6 flex items-center justify-between">
-        <Link href="/" className="font-semibold text-lg tracking-tight flex items-center gap-2">
+        <Link href="/" className="font-semibold text-lg tracking-tight flex items-center gap-3">
           <Image src="/localsm-logo.svg" alt="LocalSM logo" width={28} height={28} />
-          <span>LocalSM</span>
+          <span className="h-9 min-w-[180px] rounded-lg border border-dashed border-[var(--line)] bg-white/70 px-3 text-sm text-zinc-500 inline-flex items-center">
+            Brand Title Placeholder
+          </span>
         </Link>
 
         <button className="md:hidden" onClick={() => setOpen(!open)}>

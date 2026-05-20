@@ -64,7 +64,7 @@ export default function Home() {
           <p className="text-[#4A5568] text-lg max-w-xl">Find jobs that match your interests and abilities with a minimal, modern hiring experience.</p>
           <button className="btn-primary" onClick={() => document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" })}>Get Started</button>
         </div>
-        <div className="rounded-2xl border border-[var(--line)] bg-[#e5f2f4] min-h-[360px]" />
+        <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[#e5f2f4] min-h-[360px] grid place-items-center text-zinc-500 text-sm">Hero Image Placeholder</div>
       </section>
 
       <section className="container -mt-8 relative z-10">
