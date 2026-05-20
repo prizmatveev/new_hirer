@@ -11,16 +11,12 @@ const links = [
   ["Jobs", "#jobs"],
 ] as const;
 
-const adminLinks = [
-  ["Admin Login", "/admin/login"],
-  ["Admin Register", "/admin/register"],
-] as const;
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 py-4">
+    <header className="sticky top-0 z-50 py-3">
       <nav className="container shell h-16 px-6 flex items-center justify-between">
         <Link href="/" className="font-semibold text-lg tracking-tight flex items-center gap-2">
           <Image src="/localsm-logo.svg" alt="LocalSM logo" width={28} height={28} />
@@ -32,18 +28,17 @@ export function Navbar() {
         </button>
 
         <div className="hidden md:flex gap-8 items-center">
-          {links.map(([name, href]) => (
-            <Link key={name} href={href} className="text-sm hover:text-zinc-600 transition-colors">
-              {name}
-            </Link>
-          ))}
-          <div className="flex items-center gap-2">
-            {adminLinks.map(([name, href]) => (
-              <Link key={name} href={href} className="text-sm border rounded-lg px-3 py-2 hover:bg-zinc-50 transition-colors">
-                {name}
+          {links.map(([name, href]) => {
+            const isActive = name === "Jobs";
+            return (
+              <Link key={name} href={href} className={`text-sm transition-colors ${isActive ? "font-semibold text-zinc-900" : "hover:text-zinc-600"}`}>
+                <span className="relative inline-flex items-center">
+                  {name}
+                  {isActive && <span className="absolute -bottom-2 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[var(--accent)]" />}
+                </span>
               </Link>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </nav>
 
@@ -51,12 +46,6 @@ export function Navbar() {
         <div className="container md:hidden mt-2 shell p-4 flex flex-col gap-2">
           {links.map(([name, href]) => (
             <Link key={name} href={href}>
-              {name}
-            </Link>
-          ))}
-          <div className="h-px bg-zinc-200 my-1" />
-          {adminLinks.map(([name, href]) => (
-            <Link key={name} href={href} className="border rounded-lg px-3 py-2">
               {name}
             </Link>
           ))}
