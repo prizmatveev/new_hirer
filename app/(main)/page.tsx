@@ -20,12 +20,31 @@ export default function Home() {
   const { category, setCategory } = useAppStore();
   const [jobs, setJobs] = useState<Job[]>([]);
 
+  const loadJobs = async () => {
+    const res = await fetch('/api/jobs', { cache: 'no-store' });
+    if (!res.ok) return;
+    setJobs(await res.json());
+  };
+
   useEffect(() => {
-    void (async () => {
-      const res = await fetch('/api/jobs', { cache: 'no-store' });
-      if (!res.ok) return;
-      setJobs(await res.json());
-    })();
+    void loadJobs();
+
+    const intervalId = window.setInterval(() => {
+      void loadJobs();
+    }, 5000);
+
+    const handleFocus = () => {
+      void loadJobs();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, []);
 
   const categories = useMemo(() => {
@@ -56,6 +75,9 @@ export default function Home() {
       </section>
 
       <section id="jobs" className="container py-12 space-y-4">
+        <div className="flex justify-end">
+          <button className="border rounded-lg px-3 py-2 text-sm" onClick={() => void loadJobs()}>Refresh Jobs</button>
+        </div>
         {filtered.map((job) => (
           <motion.article key={job.id} whileHover={{ scale: 1.01 }} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
