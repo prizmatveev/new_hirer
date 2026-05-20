@@ -66,7 +66,7 @@ export default function Home() {
           <button className="btn-primary" onClick={() => document.getElementById("jobs")?.scrollIntoView({ behavior: "smooth" })}>Get Started</button>
         </div>
         <div className="rounded-2xl border border-[var(--line)] bg-[#e5f2f4] min-h-[360px] overflow-hidden">
-          <Image src="/hero-placeholder.svg" alt="Hero image placeholder" width={720} height={420} className="h-full w-full object-cover" priority />
+          <Image src="/hero-placeholder.png" alt="Hero image placeholder" width={720} height={420} className="h-full w-full object-cover" priority />
         </div>
       </section>
 
