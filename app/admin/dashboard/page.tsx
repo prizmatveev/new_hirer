@@ -212,7 +212,16 @@ export default function AdminDashboard() {
         <thead><tr className="border-b"><th className="text-left p-2">Candidate</th><th>Role</th><th>Status</th><th>Resume</th><th>Actions</th></tr></thead>
         <tbody>
           {filteredApplications.map((a) => <tr key={a.id} className="border-b align-top"><td className="p-2">{a.user.name}<div className="text-zinc-500">{a.user.email}<br />{a.phone}</div></td><td>{a.job.title}</td><td>{a.status}</td><td><a href={a.resume} className="underline">Download</a></td><td className="p-2"><div className="flex gap-2 flex-wrap">
-            <select className="border rounded p-1" defaultValue={a.status} onChange={async (e) => { await fetch(`/api/admin/applications/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: e.target.value }) }); await load(); }}>
+            <select className="border rounded p-1" value={a.status} onChange={async (e) => {
+              const nextStatus = e.target.value as AppRow["status"];
+              setApplications((prev) => prev.map((row) => row.id === a.id ? { ...row, status: nextStatus } : row));
+              const res = await fetch(`/api/admin/applications/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
+              if (!res.ok) {
+                await load();
+                return;
+              }
+              await load();
+            }}>
               {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             <button className="border rounded px-2" onClick={() => setSelected(a)}>Profile</button>
