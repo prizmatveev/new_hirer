@@ -62,7 +62,14 @@ export async function POST(req: Request) {
     uploadedKey = result.key;
   } catch (error) {
     console.error('[applications] UploadThing API exception:', error);
-    return NextResponse.json({ error: 'Unexpected resume upload failure.' }, { status: 502 });
+    const message = error instanceof Error ? error.message : 'Unexpected resume upload failure.';
+    return NextResponse.json(
+      {
+        error: `Unexpected resume upload failure: ${message}`,
+        hint: 'Verify Vercel env var UPLOADTHING_TOKEN is raw token only (no quotes, no UPLOADTHING_TOKEN= prefix), then redeploy.',
+      },
+      { status: 502 },
+    );
   }
 
   const application = await prisma.application.create({

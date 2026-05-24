@@ -11,8 +11,44 @@ export const MAX_RESUME_SIZE_BYTES = 8 * 1024 * 1024;
 export const sanitizeResumeFileName = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
 
+type PresignedUpload = {
+  key: string;
+  url: string;
+  fields?: Record<string, string>;
+};
+
+const normalizeUploadThingToken = (value: string | undefined) => {
+  if (!value) return '';
+
+  let normalized = value.trim();
+  if (normalized.startsWith('UPLOADTHING_TOKEN=')) {
+    normalized = normalized.slice('UPLOADTHING_TOKEN='.length).trim();
+  }
+
+  if (
+    (normalized.startsWith("'") && normalized.endsWith("'")) ||
+    (normalized.startsWith('"') && normalized.endsWith('"'))
+  ) {
+    normalized = normalized.slice(1, -1).trim();
+  }
+
+  return normalized;
+};
+
+const safeTokenDebug = (raw: string | undefined) => {
+  const normalized = normalizeUploadThingToken(raw);
+  const prefix = normalized ? `${normalized.slice(0, 6)}...${normalized.slice(-6)}` : 'missing';
+  return {
+    present: Boolean(normalized),
+    length: normalized.length,
+    preview: prefix,
+    hadQuotes: Boolean(raw && raw.trim().match(/^['"].*['"]$/)),
+    hadEnvPrefix: Boolean(raw?.includes('UPLOADTHING_TOKEN=')),
+  };
+};
+
 export async function uploadResumeToUploadThing(file: File, customId: string) {
-  const token = process.env.UPLOADTHING_TOKEN;
+  const token = normalizeUploadThingToken(process.env.UPLOADTHING_TOKEN);
   if (!token) {
     throw new Error('Missing UPLOADTHING_TOKEN');
   }
@@ -37,20 +73,27 @@ export async function uploadResumeToUploadThing(file: File, customId: string) {
 
   if (!uploadRes.ok) {
     const body = await uploadRes.text();
-    throw new Error(`UploadThing presign failed: ${uploadRes.status} ${body}`);
+    const debug = safeTokenDebug(process.env.UPLOADTHING_TOKEN);
+    throw new Error(`UploadThing presign failed: ${uploadRes.status} ${body}. tokenDebug=${JSON.stringify(debug)}`);
   }
 
-  const payload = (await uploadRes.json()) as Array<{ key: string; url: string; fields: Record<string, string> }>;
-  const presigned = payload?.[0];
-  if (!presigned?.url || !presigned?.key || !presigned?.fields) {
+  const payload = (await uploadRes.json()) as PresignedUpload[] | { data?: PresignedUpload[] };
+  const presigned = Array.isArray(payload) ? payload?.[0] : payload?.data?.[0];
+  if (!presigned?.url || !presigned?.key) {
     throw new Error('UploadThing presign response missing fields');
   }
 
-  const formData = new FormData();
-  Object.entries(presigned.fields).forEach(([k, v]) => formData.append(k, v));
-  formData.append('file', file);
+  const uploadBody = presigned.fields
+    ? (() => {
+        const formData = new FormData();
+        Object.entries(presigned.fields ?? {}).forEach(([k, v]) => formData.append(k, v));
+        formData.append('file', file);
+        return formData;
+      })()
+    : file;
 
-  const storeRes = await fetch(presigned.url, { method: 'POST', body: formData });
+  // UploadThing storage endpoint expects PUT for file transfer.
+  const storeRes = await fetch(presigned.url, { method: 'PUT', body: uploadBody });
   if (!storeRes.ok) {
     const body = await storeRes.text();
     throw new Error(`UploadThing file upload failed: ${storeRes.status} ${body}`);
