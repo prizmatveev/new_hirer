@@ -40,8 +40,7 @@ export async function uploadResumeToUploadThing(file: File, customId: string) {
   // Official UploadThing server SDK flow; avoids brittle manual presign APIs.
   const utapi = new UTApi({ token: normalizedToken });
   const uploaded = await utapi.uploadFiles(
-    new File([file], file.name, { type: file.type || 'application/pdf' }),
-    { metadata: { customId } },
+    new File([file], `${customId}-${file.name}`, { type: file.type || 'application/pdf' }),
   );
 
   const result = Array.isArray(uploaded) ? uploaded[0] : uploaded;
