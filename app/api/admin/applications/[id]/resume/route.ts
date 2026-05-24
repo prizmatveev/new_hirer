@@ -17,9 +17,10 @@ const toPublicResumePath = (resume: string) => {
 
 
 const parseStoredDataResume = (resume: string) => {
-  if (!resume.startsWith('data:') || !resume.includes(';base64,')) return null;
+  const normalized = resume.trim();
+  if (!normalized.startsWith('data:') || !normalized.includes(';base64,')) return null;
 
-  const [meta, base64] = resume.split(';base64,');
+  const [meta, base64] = normalized.split(';base64,');
   const metaWithoutPrefix = meta.slice('data:'.length);
   const [contentType, ...params] = metaWithoutPrefix.split(';');
   const fileNameParam = params.find((part) => part.startsWith('name='));
@@ -60,7 +61,11 @@ const mimeFromPath = (path: string) => {
 };
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const application = await prisma.application.findUnique({ where: { id: params.id }, select: { resume: true } });
+  const application = await prisma.application.findUnique({
+    where: { id: params.id },
+    select: { id: true, resume: true },
+  });
+
   if (!application?.resume) {
     return NextResponse.json({ error: 'Resume not found for this application.' }, { status: 404 });
   }
@@ -91,9 +96,22 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   }
 
   const file = await readFile(diskPath);
+
+  // Backfill legacy path-based records into persistent DB storage once file is available.
+  const inferredType = mimeFromPath(publicPath);
+  const inferredName = publicPath.split('/').pop() || 'resume';
+  const persistentDataUrl = `data:${inferredType};name=${encodeURIComponent(inferredName)};base64,${file.toString('base64')}`;
+
+  await prisma.application.update({
+    where: { id: application.id },
+    data: { resume: persistentDataUrl },
+  }).catch(() => {
+    // Non-blocking: download should still succeed even if backfill fails.
+  });
+
   return new NextResponse(file, {
     headers: {
-      'Content-Type': mimeFromPath(publicPath),
+      'Content-Type': inferredType,
       'Content-Disposition': `inline; filename="${publicPath.split('/').pop() || 'resume'}"`,
       'Cache-Control': 'private, no-store',
     },
