@@ -35,6 +35,25 @@ const normalizeUploadThingToken = (value: string | undefined) => {
   return normalized;
 };
 
+const decodeUploadThingApiKey = (token: string) => {
+  try {
+    const parsed = JSON.parse(token) as { apiKey?: string };
+    if (parsed?.apiKey) return parsed.apiKey;
+  } catch {
+    // noop
+  }
+
+  try {
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    const parsed = JSON.parse(decoded) as { apiKey?: string };
+    if (parsed?.apiKey) return parsed.apiKey;
+  } catch {
+    // noop
+  }
+
+  return token;
+};
+
 const safeTokenDebug = (raw: string | undefined) => {
   const normalized = normalizeUploadThingToken(raw);
   const prefix = normalized ? `${normalized.slice(0, 6)}...${normalized.slice(-6)}` : 'missing';
@@ -48,16 +67,17 @@ const safeTokenDebug = (raw: string | undefined) => {
 };
 
 export async function uploadResumeToUploadThing(file: File, customId: string) {
-  const token = normalizeUploadThingToken(process.env.UPLOADTHING_TOKEN);
-  if (!token) {
+  const normalizedToken = normalizeUploadThingToken(process.env.UPLOADTHING_TOKEN);
+  if (!normalizedToken) {
     throw new Error('Missing UPLOADTHING_TOKEN');
   }
+  const apiKey = decodeUploadThingApiKey(normalizedToken);
 
   const uploadRes = await fetch('https://uploadthing.com/api/uploadFiles', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-uploadthing-api-key': token,
+      'x-uploadthing-api-key': apiKey,
     },
     body: JSON.stringify({
       files: [
