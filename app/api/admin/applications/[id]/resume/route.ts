@@ -15,7 +15,6 @@ const toPublicResumePath = (resume: string) => {
   return `/uploads/resumes/${normalized.split('/').pop() ?? normalized}`;
 };
 
-
 const parseStoredDataResume = (resume: string) => {
   const normalized = resume.trim();
   if (!normalized.startsWith('data:') || !normalized.includes(';base64,')) return null;
@@ -38,47 +37,40 @@ const parseStoredDataResume = (resume: string) => {
   }
 };
 
-const mimeFromPath = (path: string) => {
-  const ext = path.toLowerCase().split('.').pop() ?? '';
-  switch (ext) {
-    case 'pdf': return 'application/pdf';
-    case 'doc': return 'application/msword';
-    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'txt': return 'text/plain; charset=utf-8';
-    case 'rtf': return 'application/rtf';
-    case 'odt': return 'application/vnd.oasis.opendocument.text';
-    case 'png': return 'image/png';
-    case 'jpg':
-    case 'jpeg': return 'image/jpeg';
-    case 'webp': return 'image/webp';
-    case 'gif': return 'image/gif';
-    case 'bmp': return 'image/bmp';
-    case 'tif':
-    case 'tiff': return 'image/tiff';
-    case 'svg': return 'image/svg+xml';
-    default: return 'application/octet-stream';
-  }
-};
-
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const application = await prisma.application.findUnique({
     where: { id: params.id },
-    select: { id: true, resume: true, resumeAsset: { select: { fileName: true, contentType: true, data: true } } },
+    select: {
+      id: true,
+      resume: true,
+      resumeFileUrl: true,
+      resumeFileName: true,
+      resumeMimeType: true,
+      resumeAsset: { select: { fileName: true, contentType: true, data: true } },
+    },
   });
 
-  if (!application?.resume) {
-    return NextResponse.json({ error: 'Resume not found for this application.' }, { status: 404 });
+  if (!application) {
+    return NextResponse.json({ error: 'Application not found.' }, { status: 404 });
   }
 
+  if (application.resumeFileUrl) {
+    return NextResponse.redirect(application.resumeFileUrl);
+  }
 
+  // Legacy compatibility path for old records until all historic resumes are migrated.
   if (application.resumeAsset) {
     return new NextResponse(new Uint8Array(application.resumeAsset.data), {
       headers: {
-        'Content-Type': application.resumeAsset.contentType || 'application/octet-stream',
-        'Content-Disposition': `inline; filename="${application.resumeAsset.fileName || 'resume'}"`,
+        'Content-Type': application.resumeAsset.contentType || application.resumeMimeType || 'application/octet-stream',
+        'Content-Disposition': `inline; filename="${application.resumeAsset.fileName || application.resumeFileName || 'resume'}"`,
         'Cache-Control': 'private, no-store',
       },
     });
+  }
+
+  if (!application.resume) {
+    return NextResponse.json({ error: 'Resume not found for this application.' }, { status: 404 });
   }
 
   const resume = application.resume;
@@ -102,29 +94,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   try {
     await access(diskPath, constants.R_OK);
+    const file = await readFile(diskPath);
+    return new NextResponse(new Uint8Array(file), {
+      headers: {
+        'Content-Type': application.resumeMimeType || 'application/octet-stream',
+        'Content-Disposition': `inline; filename="${application.resumeFileName || publicPath.split('/').pop() || 'resume'}"`,
+        'Cache-Control': 'private, no-store',
+      },
+    });
   } catch {
-    return NextResponse.json({ error: 'Resume file is missing on server storage. This is usually a legacy record saved before persistent resume storage was enabled.' }, { status: 404 });
+    return NextResponse.json({ error: 'Resume file is missing and no UploadThing URL is available.' }, { status: 404 });
   }
-
-  const file = await readFile(diskPath);
-
-  // Backfill legacy path-based records into persistent DB storage once file is available.
-  const inferredType = mimeFromPath(publicPath);
-  const inferredName = publicPath.split('/').pop() || 'resume';
-  const persistentDataUrl = `data:${inferredType};name=${encodeURIComponent(inferredName)};base64,${file.toString('base64')}`;
-
-  await prisma.application.update({
-    where: { id: application.id },
-    data: { resume: persistentDataUrl },
-  }).catch(() => {
-    // Non-blocking: download should still succeed even if backfill fails.
-  });
-
-  return new NextResponse(new Uint8Array(file), {
-    headers: {
-      'Content-Type': inferredType,
-      'Content-Disposition': `inline; filename="${publicPath.split('/').pop() || 'resume'}"`,
-      'Cache-Control': 'private, no-store',
-    },
-  });
 }
