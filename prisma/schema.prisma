@@ -51,6 +51,7 @@ model Application {
   user           User              @relation(fields: [userId], references: [id])
   job            Job               @relation(fields: [jobId], references: [id])
   notes          AdminNotes[]
+  resumeAsset    ResumeAsset?
 }
 
 model AdminNotes {
@@ -72,4 +73,15 @@ enum ApplicationStatus {
   SHORTLISTED
   REJECTED
   HIRED
+}
+
+
+model ResumeAsset {
+  id          String       @id @default(cuid())
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  applicationId String?    @unique
+  fileName    String
+  contentType String
+  data        Bytes
+  createdAt   DateTime     @default(now())
 }

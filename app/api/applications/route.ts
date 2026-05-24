@@ -51,11 +51,15 @@ export async function POST(req: Request) {
 
   const bytes = await resume.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  const uploadDir = join(process.cwd(), 'public', 'uploads', 'resumes');
-  await mkdir(uploadDir, { recursive: true });
   const storedName = `${Date.now()}-${sanitizeFileName(fileName)}`;
-  await writeFile(join(uploadDir, storedName), buffer);
-  const resumePath = `/uploads/resumes/${storedName}`;
+
+  try {
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'resumes');
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(join(uploadDir, storedName), buffer);
+  } catch {
+    // Optional best-effort local write only.
+  }
 
   const user = await prisma.user.upsert({
     where: { email },
@@ -63,23 +67,57 @@ export async function POST(req: Request) {
     create: { name: fullName, email, role: 'CANDIDATE' },
   });
 
-  const application = await prisma.application.create({
-    data: {
-      userId: user.id,
-      jobId,
-      phone,
-      location: location || null,
-      yearsExperience: experience || null,
-      currentCompany: currentCompany || null,
-      expectedSalary: expectedSalary || null,
-      coverLetter: coverLetter || null,
-      linkedin,
-      github,
-      portfolio: portfolio || null,
-      resume: resumePath,
-      status: 'PENDING',
-    },
-  });
+  const resumeDataUrl = `data:${resume.type || 'application/octet-stream'};name=${encodeURIComponent(storedName)};base64,${buffer.toString('base64')}`;
 
-  return NextResponse.json({ ok: true, applicationId: application.id });
+  try {
+    const application = await prisma.application.create({
+      data: {
+        userId: user.id,
+        jobId,
+        phone,
+        location: location || null,
+        yearsExperience: experience || null,
+        currentCompany: currentCompany || null,
+        expectedSalary: expectedSalary || null,
+        coverLetter: coverLetter || null,
+        linkedin,
+        github,
+        portfolio: portfolio || null,
+        resume: `dbasset:${storedName}`,
+        status: 'PENDING',
+        resumeAsset: {
+          create: {
+            fileName: storedName,
+            contentType: resume.type || 'application/octet-stream',
+            data: buffer,
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({ ok: true, applicationId: application.id });
+  } catch {
+    // Fallback for deployments where DB schema is not yet migrated for ResumeAsset.
+    const fallbackApplication = await prisma.application.create({
+      data: {
+        userId: user.id,
+        jobId,
+        phone,
+        location: location || null,
+        yearsExperience: experience || null,
+        currentCompany: currentCompany || null,
+        expectedSalary: expectedSalary || null,
+        coverLetter: coverLetter || null,
+        linkedin,
+        github,
+        portfolio: portfolio || null,
+        resume: resumeDataUrl,
+        status: 'PENDING',
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({ ok: true, applicationId: fallbackApplication.id });
+  }
 }
