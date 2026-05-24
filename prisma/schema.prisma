@@ -30,6 +30,8 @@ model Job {
   isOpen         Boolean       @default(true)
   applications   Application[]
   createdAt      DateTime      @default(now())
+
+  @@unique([title, category, location], name: "title_category_location")
 }
 
 model Application {
