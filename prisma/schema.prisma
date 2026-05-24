@@ -37,6 +37,10 @@ model Application {
   userId         String
   jobId          String
   resume         String
+  resumeFileUrl  String?
+  resumeFileKey  String?
+  resumeFileName String?
+  resumeMimeType String?
   linkedin       String
   github         String
   portfolio      String?
