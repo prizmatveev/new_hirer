@@ -15,6 +15,29 @@ const toPublicResumePath = (resume: string) => {
   return `/uploads/resumes/${normalized.split('/').pop() ?? normalized}`;
 };
 
+
+const parseStoredDataResume = (resume: string) => {
+  const normalized = resume.trim();
+  if (!normalized.startsWith('data:') || !normalized.includes(';base64,')) return null;
+
+  const [meta, base64] = normalized.split(';base64,');
+  const metaWithoutPrefix = meta.slice('data:'.length);
+  const [contentType, ...params] = metaWithoutPrefix.split(';');
+  const fileNameParam = params.find((part) => part.startsWith('name='));
+  const fileName = fileNameParam ? decodeURIComponent(fileNameParam.replace(/^name=/, '')) : 'resume';
+
+  try {
+    const file = Buffer.from(base64, 'base64');
+    return {
+      file,
+      contentType: contentType || 'application/octet-stream',
+      fileName,
+    };
+  } catch {
+    return null;
+  }
+};
+
 const mimeFromPath = (path: string) => {
   const ext = path.toLowerCase().split('.').pop() ?? '';
   switch (ext) {
@@ -38,7 +61,11 @@ const mimeFromPath = (path: string) => {
 };
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const application = await prisma.application.findUnique({ where: { id: params.id }, select: { resume: true } });
+  const application = await prisma.application.findUnique({
+    where: { id: params.id },
+    select: { id: true, resume: true },
+  });
+
   if (!application?.resume) {
     return NextResponse.json({ error: 'Resume not found for this application.' }, { status: 404 });
   }
@@ -48,19 +75,43 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return NextResponse.redirect(resume);
   }
 
+  const parsedDataResume = parseStoredDataResume(resume);
+  if (parsedDataResume) {
+    return new NextResponse(parsedDataResume.file, {
+      headers: {
+        'Content-Type': parsedDataResume.contentType,
+        'Content-Disposition': `inline; filename="${parsedDataResume.fileName}"`,
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  }
+
   const publicPath = toPublicResumePath(resume);
   const diskPath = join(process.cwd(), 'public', publicPath.replace(/^\//, ''));
 
   try {
     await access(diskPath, constants.R_OK);
   } catch {
-    return NextResponse.json({ error: 'Resume file is missing on server storage.' }, { status: 404 });
+    return NextResponse.json({ error: 'Resume file is missing on server storage. This is usually a legacy record saved before persistent resume storage was enabled.' }, { status: 404 });
   }
 
   const file = await readFile(diskPath);
+
+  // Backfill legacy path-based records into persistent DB storage once file is available.
+  const inferredType = mimeFromPath(publicPath);
+  const inferredName = publicPath.split('/').pop() || 'resume';
+  const persistentDataUrl = `data:${inferredType};name=${encodeURIComponent(inferredName)};base64,${file.toString('base64')}`;
+
+  await prisma.application.update({
+    where: { id: application.id },
+    data: { resume: persistentDataUrl },
+  }).catch(() => {
+    // Non-blocking: download should still succeed even if backfill fails.
+  });
+
   return new NextResponse(file, {
     headers: {
-      'Content-Type': mimeFromPath(publicPath),
+      'Content-Type': inferredType,
       'Content-Disposition': `inline; filename="${publicPath.split('/').pop() || 'resume'}"`,
       'Cache-Control': 'private, no-store',
     },
