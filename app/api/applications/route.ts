@@ -67,32 +67,57 @@ export async function POST(req: Request) {
     create: { name: fullName, email, role: 'CANDIDATE' },
   });
 
-  const application = await prisma.application.create({
-    data: {
-      userId: user.id,
-      jobId,
-      phone,
-      location: location || null,
-      yearsExperience: experience || null,
-      currentCompany: currentCompany || null,
-      expectedSalary: expectedSalary || null,
-      coverLetter: coverLetter || null,
-      linkedin,
-      github,
-      portfolio: portfolio || null,
-      // Keep legacy column populated with a durable marker.
-      resume: `dbasset:${storedName}`,
-      status: 'PENDING',
-      resumeAsset: {
-        create: {
-          fileName: storedName,
-          contentType: resume.type || 'application/octet-stream',
-          data: buffer,
+  const resumeDataUrl = `data:${resume.type || 'application/octet-stream'};name=${encodeURIComponent(storedName)};base64,${buffer.toString('base64')}`;
+
+  try {
+    const application = await prisma.application.create({
+      data: {
+        userId: user.id,
+        jobId,
+        phone,
+        location: location || null,
+        yearsExperience: experience || null,
+        currentCompany: currentCompany || null,
+        expectedSalary: expectedSalary || null,
+        coverLetter: coverLetter || null,
+        linkedin,
+        github,
+        portfolio: portfolio || null,
+        resume: `dbasset:${storedName}`,
+        status: 'PENDING',
+        resumeAsset: {
+          create: {
+            fileName: storedName,
+            contentType: resume.type || 'application/octet-stream',
+            data: buffer,
+          },
         },
       },
-    },
-    select: { id: true },
-  });
+      select: { id: true },
+    });
 
-  return NextResponse.json({ ok: true, applicationId: application.id });
+    return NextResponse.json({ ok: true, applicationId: application.id });
+  } catch {
+    // Fallback for deployments where DB schema is not yet migrated for ResumeAsset.
+    const fallbackApplication = await prisma.application.create({
+      data: {
+        userId: user.id,
+        jobId,
+        phone,
+        location: location || null,
+        yearsExperience: experience || null,
+        currentCompany: currentCompany || null,
+        expectedSalary: expectedSalary || null,
+        coverLetter: coverLetter || null,
+        linkedin,
+        github,
+        portfolio: portfolio || null,
+        resume: resumeDataUrl,
+        status: 'PENDING',
+      },
+      select: { id: true },
+    });
+
+    return NextResponse.json({ ok: true, applicationId: fallbackApplication.id });
+  }
 }
