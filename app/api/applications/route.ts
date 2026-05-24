@@ -5,8 +5,7 @@ import {
   RESUME_ALLOWED_EXTENSIONS,
   RESUME_ALLOWED_MIME_TYPES,
   sanitizeResumeFileName,
-  uploadResumeToUploadThing,
-} from '@/lib/uploadthing';
+} from '@/lib/resume-upload';
 
 export async function POST(req: Request) {
   const form = await req.formData();
@@ -45,32 +44,8 @@ export async function POST(req: Request) {
     create: { name: fullName, email, role: 'CANDIDATE' },
   });
 
-  // UploadThing is the only write path for new resume documents.
-  const uploadName = `${Date.now()}-${sanitizeResumeFileName(fileName)}`;
-  let uploadedUrl = '';
-  let uploadedKey = '';
-
-  try {
-    const result = await uploadResumeToUploadThing(new File([resume], uploadName, { type: resume.type || 'application/pdf' }), uploadName);
-
-    if (!result.url || !result.key) {
-      console.error('[applications] UploadThing returned missing url/key:', result);
-      return NextResponse.json({ error: 'Resume upload response was invalid.' }, { status: 502 });
-    }
-
-    uploadedUrl = result.url;
-    uploadedKey = result.key;
-  } catch (error) {
-    console.error('[applications] UploadThing API exception:', error);
-    const message = error instanceof Error ? error.message : 'Unexpected resume upload failure.';
-    return NextResponse.json(
-      {
-        error: `Unexpected resume upload failure: ${message}`,
-        hint: 'Verify Vercel env var UPLOADTHING_TOKEN is raw token only (no quotes, no UPLOADTHING_TOKEN= prefix), then redeploy.',
-      },
-      { status: 502 },
-    );
-  }
+  const safeFileName = `${Date.now()}-${sanitizeResumeFileName(fileName)}`;
+  const resumeBuffer = Buffer.from(await resume.arrayBuffer());
 
   const application = await prisma.application.create({
     data: {
@@ -85,12 +60,19 @@ export async function POST(req: Request) {
       linkedin,
       github,
       portfolio: portfolio || null,
-      // Keep legacy column for backward compatibility while shifting reads to dedicated fields.
-      resume: uploadedUrl,
-      resumeFileUrl: uploadedUrl,
-      resumeFileKey: uploadedKey,
+      // Keep legacy column as a metadata pointer while storing binary in ResumeAsset.
+      resume: `db-asset://${safeFileName}` ,
+      resumeFileUrl: null,
+      resumeFileKey: null,
       resumeFileName: fileName,
       resumeMimeType: resume.type || 'application/pdf',
+      resumeAsset: {
+        create: {
+          fileName,
+          contentType: resume.type || 'application/pdf',
+          data: resumeBuffer,
+        },
+      },
       status: 'PENDING',
     },
     select: { id: true },
