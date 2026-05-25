@@ -225,7 +225,9 @@ export default function AdminDashboard() {
               setApplications((prev) => prev.map((row) => row.id === a.id ? { ...row, status: nextStatus } : row));
               const res = await fetch(`/api/admin/applications/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
               if (!res.ok) {
+                const payload = await res.json().catch(() => null);
                 await load();
+                alert(payload?.error || "Failed to update status.");
                 return;
               }
               await load();
