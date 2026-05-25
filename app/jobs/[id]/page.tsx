@@ -27,6 +27,17 @@ export default async function JobDetail({ params }: { params: { id: string } }) 
                 <li>{job.experience}</li>
                 <li>{job.skills.join(', ')}</li>
               </ul>
+
+              {job.customQuestions.length > 0 && (
+                <>
+                  <h2 className='font-semibold pt-4'>Custom Questions</h2>
+                  <ul className='list-disc pl-6 text-zinc-700 space-y-1'>
+                    {job.customQuestions.map((question) => (
+                      <li key={question}>{question}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </section>
 
             <aside className='lg:sticky lg:top-20 card p-4 h-fit bg-white'>
