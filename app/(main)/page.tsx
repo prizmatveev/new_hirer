@@ -14,6 +14,7 @@ type Job = {
   category: string;
   location: string;
   employmentType: string;
+  openings?: number;
 };
 
 const baseCategories = ["Web Development", "App Development", "Graphics Design", "Explore All Roles"];
@@ -91,7 +92,8 @@ export default function Home() {
               <h3 className="text-xl font-semibold">{job.title}</h3>
               <p className="text-sm text-zinc-600">{job.category} • {job.location} • {job.employmentType}</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-zinc-600">Openings: {Math.max(1, Number(job.openings ?? 1))}</span>
               <Link href={`/jobs/${job.id}`} className="btn-primary text-sm">Apply Now</Link>
             </div>
           </motion.article>

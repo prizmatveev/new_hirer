@@ -19,11 +19,8 @@ export default async function JobDetail({ params }: { params: { id: string } }) 
                 {job.category} • {job.location} • {job.salary}
               </p>
 
-              <h2 className='font-semibold pt-4'>Responsibilities</h2>
-              <ul className='list-disc pl-6 text-zinc-700'>
-                <li>Ship quality experiences.</li>
-                <li>Collaborate cross-functionally.</li>
-              </ul>
+              <h2 className='font-semibold pt-4'>Job Description</h2>
+              <p className='text-zinc-700 whitespace-pre-wrap'>{job.description}</p>
 
               <h2 className='font-semibold pt-4'>Requirements</h2>
               <ul className='list-disc pl-6 text-zinc-700'>
